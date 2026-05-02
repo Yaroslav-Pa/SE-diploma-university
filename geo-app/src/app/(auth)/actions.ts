@@ -52,9 +52,11 @@ export async function signup(formData: FormData) {
     }
   }
 
+  if (!data.session) {
+    redirect('/login?message=' + encodeURIComponent('Registration successful! Please check your email to confirm your account (or disable email confirmation in Supabase).'))
+  }
+
   revalidatePath('/', 'layout')
-  // We'll redirect to /login to force them to login, or /map if they are logged in automatically.
-  // We'll just go to map. If middleware blocks them, they'll be redirected to login.
   redirect('/map') 
 }
 

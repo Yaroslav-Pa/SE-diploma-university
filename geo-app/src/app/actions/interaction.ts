@@ -68,10 +68,12 @@ export async function getPoiDetails(poiId: string) {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('pois')
-    .select('*, users(username)')
+    .select('*, users!pois_creator_id_fkey(username)')
     .eq('id', poiId)
     .single()
-    
-  if (error) throw new Error('Failed to load POI details')
+  if (error) {
+    console.error('getPoiDetails error:', error)
+    throw new Error(`Failed to load POI details: ${error.message}`)
+  }
   return data
 }

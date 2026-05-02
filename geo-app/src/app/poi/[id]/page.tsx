@@ -2,12 +2,15 @@ import { getPoiDetails, getComments, addComment, toggleReaction } from '@/app/ac
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 
-export default async function PoiDetailsPage({ params }: { params: { id: string } }) {
+export default async function PoiDetailsPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const poi = await getPoiDetails(params.id)
-  const comments = await getComments(params.id)
+  const resolvedParams = await params;
+  const poiId = resolvedParams.id;
+
+  const poi = await getPoiDetails(poiId)
+  const comments = await getComments(poiId)
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-4 sm:p-8">

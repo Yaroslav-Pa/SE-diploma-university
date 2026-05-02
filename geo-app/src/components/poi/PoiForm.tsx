@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { useRouter } from 'next/navigation'
@@ -27,6 +27,14 @@ function LocationMarker({ position, setPosition }: { position: L.LatLng | null, 
   return position === null ? null : (
     <Marker position={position}></Marker>
   )
+}
+
+function UpdateCenter({ center }: { center: [number, number] }) {
+  const map = useMap()
+  useEffect(() => {
+    map.flyTo(center, map.getZoom())
+  }, [center, map])
+  return null
 }
 
 export default function PoiForm() {
@@ -124,6 +132,7 @@ export default function PoiForm() {
           <TileLayer
             url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           />
+          <UpdateCenter center={userLocation} />
           <LocationMarker position={position} setPosition={setPosition} />
         </MapContainer>
       </div>

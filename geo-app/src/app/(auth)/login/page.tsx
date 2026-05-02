@@ -1,5 +1,6 @@
 import { login } from '../actions'
 import Link from 'next/link'
+import ToastNotification from '@/components/ToastNotification'
 
 export default function LoginPage({
   searchParams,
@@ -8,6 +9,10 @@ export default function LoginPage({
 }) {
   return (
     <div className="flex-1 flex flex-col w-full px-8 sm:max-w-md justify-center gap-2">
+      <ToastNotification 
+        message={searchParams?.message} 
+        type={searchParams?.message?.includes('successful') ? 'success' : 'error'} 
+      />
       <Link
         href="/"
         className="absolute left-8 top-8 py-2 px-4 rounded-md no-underline text-foreground bg-btn-background hover:bg-btn-background-hover flex items-center group text-sm"

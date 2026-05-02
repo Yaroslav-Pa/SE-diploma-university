@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { getPoisInBounds, Poi } from '@/app/actions/poi'
@@ -36,6 +36,14 @@ function MapEvents({ setBounds }: { setBounds: (b: L.LatLngBounds) => void }) {
   return null
 }
 
+function UpdateCenter({ center }: { center: [number, number] }) {
+  const map = useMap()
+  useEffect(() => {
+    map.flyTo(center, map.getZoom())
+  }, [center, map])
+  return null
+}
+
 export default function InteractiveMap() {
   const [pois, setPois] = useState<Poi[]>([])
   const [bounds, setBounds] = useState<L.LatLngBounds | null>(null)
@@ -50,7 +58,7 @@ export default function InteractiveMap() {
           setLoadingLoc(false)
         },
         (error) => {
-          console.error("Error getting location", error)
+          console.warn("Unable to get location or permission denied:", error.message)
           setLoadingLoc(false)
         }
       )
@@ -98,6 +106,7 @@ export default function InteractiveMap() {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
+        <UpdateCenter center={userLocation} />
         <MapEvents setBounds={setBounds} />
         
         {pois.map(poi => {
@@ -129,7 +138,7 @@ export default function InteractiveMap() {
                   </div>
                   <a 
                     href={`/poi/${poi.id}`} 
-                    className="block text-center bg-blue-600 text-white text-xs font-bold py-1.5 rounded hover:bg-blue-700 transition-colors no-underline"
+                    className="block text-center bg-blue-600 !text-white text-xs font-bold py-1.5 rounded hover:bg-blue-700 transition-colors no-underline"
                   >
                     View Details & Comments
                   </a>

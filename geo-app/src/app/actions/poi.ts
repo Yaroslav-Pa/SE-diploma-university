@@ -2,6 +2,21 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import wkx from 'wkx'
+
+// Helper to parse PostGIS hex WKB to GeoJSON
+function parseLocation(loc: any) {
+  if (typeof loc === 'string') {
+    try {
+      const geometry = wkx.Geometry.parse(Buffer.from(loc, 'hex'))
+      return geometry.toGeoJSON()
+    } catch (e) {
+      console.error('Error parsing WKB location:', e)
+      return loc
+    }
+  }
+  return loc
+}
 
 export interface Poi {
   id: string
@@ -41,15 +56,25 @@ export async function getPoisInBounds(minLat: number, minLng: number, maxLat: nu
       throw new Error('Failed to fetch POIs: ' + fallbackError.message)
     }
     
+    // Parse locations first
+    const processedData = fallbackData.map((poi: Poi) => ({
+      ...poi,
+      location: parseLocation(poi.location)
+    }))
+
     // Functional filter
-    return fallbackData.filter((poi: Poi) => {
+    return processedData.filter((poi: Poi) => {
       if (!poi.location || !poi.location.coordinates) return false;
       const [lng, lat] = poi.location.coordinates;
       return lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng;
     }) as Poi[];
   }
 
-  return data as Poi[]
+  // Parse locations for RPC data too
+  return data.map((poi: Poi) => ({
+    ...poi,
+    location: parseLocation(poi.location)
+  })) as Poi[]
 }
 
 export async function createPoi(formData: FormData) {

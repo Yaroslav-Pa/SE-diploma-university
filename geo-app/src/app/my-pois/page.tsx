@@ -23,14 +23,14 @@ export default async function MyPoisPage() {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">My POIs</h1>
           <div className="flex gap-4">
-            <Link 
-              href="/map" 
+            <Link
+              href="/map"
               className="bg-white dark:bg-slate-800 px-4 py-2 rounded-md shadow text-sm font-medium hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
             >
               Map
             </Link>
-            <Link 
-              href="/poi/create" 
+            <Link
+              href="/poi/create"
               className="bg-emerald-500 text-white px-4 py-2 rounded-md shadow text-sm font-medium hover:bg-emerald-600 transition-colors"
             >
               + Create New
@@ -47,7 +47,7 @@ export default async function MyPoisPage() {
                 </div>
                 <h3 className="text-xl font-bold mb-2 pr-16 leading-tight">{poi.title}</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 line-clamp-2 flex-1">{poi.description}</p>
-                
+
                 <div className="text-xs text-gray-500 mb-4 bg-gray-100 dark:bg-slate-800 p-2 rounded">
                   <p><strong>Start:</strong> {poi.start_date ? new Date(poi.start_date).toLocaleString() : 'N/A'}</p>
                   <p><strong>End:</strong> {poi.end_date ? new Date(poi.end_date).toLocaleString() : 'N/A'}</p>
@@ -55,6 +55,9 @@ export default async function MyPoisPage() {
                 </div>
 
                 <div className="flex gap-2">
+                  <Link href={`/poi/${poi.id}`} className="flex-1 flex items-center justify-center text-center bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md text-sm font-semibold transition-colors">
+                    View Details
+                  </Link>
                   <form action={async () => {
                     'use server';
                     await deletePoi(poi.id);
@@ -70,8 +73,8 @@ export default async function MyPoisPage() {
         ) : (
           <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 p-12 text-center">
             <h3 className="text-xl font-medium text-gray-600 dark:text-gray-400 mb-4">You haven't created any POIs yet.</h3>
-            <Link 
-              href="/poi/create" 
+            <Link
+              href="/poi/create"
               className="inline-block bg-emerald-500 text-white px-6 py-3 rounded-full shadow-lg font-semibold hover:bg-emerald-600 transition-colors"
             >
               Create Your First POI
