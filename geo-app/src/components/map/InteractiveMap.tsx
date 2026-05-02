@@ -6,6 +6,7 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { getPoisInBounds, Poi, createPoi } from '@/app/actions/poi'
 import toast from 'react-hot-toast'
+import { useRouter } from 'next/navigation'
 
 // Custom category icons
 const getCategoryIcon = (category: string) => {
@@ -45,8 +46,22 @@ function MapEvents({
   setNewPoiLocation: (loc: [number, number] | null) => void 
 }) {
   const map = useMapEvents({
-    moveend: () => setBounds(map.getBounds()),
-    zoomend: () => setBounds(map.getBounds()),
+    moveend: () => {
+      setBounds(map.getBounds())
+      localStorage.setItem('mapPos', JSON.stringify({
+        lat: map.getCenter().lat,
+        lng: map.getCenter().lng,
+        zoom: map.getZoom()
+      }))
+    },
+    zoomend: () => {
+      setBounds(map.getBounds())
+      localStorage.setItem('mapPos', JSON.stringify({
+        lat: map.getCenter().lat,
+        lng: map.getCenter().lng,
+        zoom: map.getZoom()
+      }))
+    },
     click: (e) => {
       if (isCreating) {
         setNewPoiLocation([e.latlng.lat, e.latlng.lng])
@@ -61,11 +76,15 @@ function MapEvents({
   return null
 }
 
-function UpdateCenter({ center }: { center: [number, number] }) {
+function UpdateCenter({ center, zoom }: { center: [number, number], zoom: number }) {
   const map = useMap()
   useEffect(() => {
-    map.flyTo(center, map.getZoom())
-  }, [center, map])
+    // Only flyTo if the map's current center is significantly different
+    const currentCenter = map.getCenter()
+    if (Math.abs(currentCenter.lat - center[0]) > 0.001 || Math.abs(currentCenter.lng - center[1]) > 0.001) {
+      map.flyTo(center, zoom, { duration: 1.5 })
+    }
+  }, [center, map, zoom])
   return null
 }
 
@@ -84,6 +103,7 @@ function PoiCreationModal({
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [photos, setPhotos] = useState<File[]>([])
+  const [coverIndex, setCoverIndex] = useState<number>(0)
   
   const now = new Date()
   const minDate = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16)
@@ -106,8 +126,15 @@ function PoiCreationModal({
       formData.append('lat', location[0].toString())
       formData.append('lng', location[1].toString())
       
+      // Reorder photos so cover is first
+      const orderedPhotos = [...photos]
+      if (orderedPhotos.length > 0 && coverIndex !== 0) {
+        const cover = orderedPhotos.splice(coverIndex, 1)[0]
+        orderedPhotos.unshift(cover)
+      }
+
       // Compress and append photos
-      for (const file of photos) {
+      for (const file of orderedPhotos) {
         const compressedFile = await imageCompression(file, {
           maxSizeMB: 1,
           maxWidthOrHeight: 1920,
@@ -138,15 +165,56 @@ function PoiCreationModal({
         <textarea name="description" className="w-full border rounded-md px-3 py-2 bg-transparent dark:border-slate-700 text-sm min-h-[60px]" placeholder="Description..." />
         
         <div>
-          <label className="block text-[10px] uppercase text-gray-500 mb-1">Add Photos</label>
+          <div className="flex items-center gap-2 mb-1">
+            <label className="text-[10px] uppercase text-gray-500">Add Photos</label>
+            {photos.length > 0 && (
+              <button type="button" onClick={() => { setPhotos([]); setCoverIndex(0); }} className="text-[10px] text-red-500 font-bold hover:underline">
+                Clear All
+              </button>
+            )}
+          </div>
           <input 
             type="file" 
             accept="image/*" 
             multiple 
-            onChange={(e) => setPhotos(Array.from(e.target.files || []))}
+            onChange={(e) => {
+              const newFiles = Array.from(e.target.files || [])
+              setPhotos(prev => [...prev, ...newFiles])
+              e.target.value = ''
+            }}
             className="w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
           />
-          {photos.length > 0 && <span className="text-xs text-emerald-600 mt-1 block">{photos.length} photo(s) selected</span>}
+          {photos.length > 0 && (
+            <div className="flex gap-2 mt-2 overflow-x-auto pb-2">
+              {photos.map((file, idx) => (
+                <div key={idx} className="relative shrink-0 w-16 h-16 cursor-pointer group">
+                  <img onClick={() => setCoverIndex(idx)} src={URL.createObjectURL(file)} alt="preview" className={`w-full h-full object-cover rounded-md border-2 transition-colors ${coverIndex === idx ? 'border-emerald-500' : 'border-transparent'}`} />
+                  {coverIndex === idx && (
+                    <div className="absolute top-1 left-1 bg-emerald-500 text-white rounded-full p-0.5 shadow pointer-events-none">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    </div>
+                  )}
+                  {coverIndex !== idx && (
+                     <div onClick={() => setCoverIndex(idx)} className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[10px] font-bold text-center p-1 rounded-md transition-opacity leading-none">Set Cover</div>
+                  )}
+                  <button 
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPhotos(prev => prev.filter((_, i) => i !== idx))
+                      if (coverIndex === idx) setCoverIndex(0)
+                      else if (coverIndex > idx) setCoverIndex(coverIndex - 1)
+                    }}
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold shadow opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <select required name="category" className="w-full border rounded-md px-3 py-2 bg-transparent dark:border-slate-700 text-sm">
@@ -157,14 +225,14 @@ function PoiCreationModal({
           <option value="other" className="text-black">Other 📍</option>
         </select>
         
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2">
           <div className="flex-1 min-w-0">
             <label className="block text-[10px] uppercase text-gray-500 mb-1">Start Date</label>
-            <input type="datetime-local" min={minDate} max={maxDate} name="startDate" className="w-full border rounded-md px-2 py-1.5 bg-transparent dark:border-slate-700 text-xs" />
+            <input type="datetime-local" min={minDate} name="startDate" className="w-full border rounded-md px-2 py-1.5 bg-transparent dark:border-slate-700 text-xs" />
           </div>
           <div className="flex-1 min-w-0">
             <label className="block text-[10px] uppercase text-gray-500 mb-1">End Date*</label>
-            <input type="datetime-local" min={minDate} max={maxDate} name="endDate" required className="w-full border rounded-md px-2 py-1.5 bg-transparent dark:border-slate-700 text-xs" />
+            <input type="datetime-local" min={minDate} name="endDate" required className="w-full border rounded-md px-2 py-1.5 bg-transparent dark:border-slate-700 text-xs" />
           </div>
         </div>
         <button 
@@ -180,16 +248,48 @@ function PoiCreationModal({
 }
 
 export default function InteractiveMap({ userId }: { userId?: string }) {
+  const router = useRouter()
   const [pois, setPois] = useState<Poi[]>([])
   const [bounds, setBounds] = useState<L.LatLngBounds | null>(null)
-  const [userLocation, setUserLocation] = useState<[number, number]>([51.505, -0.09]) // Default London
-  const [loadingLoc, setLoadingLoc] = useState(true)
+  
+  const [userLocation, setUserLocation] = useState<[number, number]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('mapPos')
+      if (saved) {
+        try {
+          const { lat, lng } = JSON.parse(saved)
+          return [lat, lng]
+        } catch(e) {}
+      }
+    }
+    return [51.505, -0.09] // Default London
+  })
+  
+  const [mapZoom, setMapZoom] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('mapPos')
+      if (saved) {
+        try {
+          const { zoom } = JSON.parse(saved)
+          return zoom
+        } catch(e) {}
+      }
+    }
+    return 13
+  })
+  
+  const [loadingLoc, setLoadingLoc] = useState(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem('mapPos')) return false
+    return true
+  })
   
   // Create mode state
   const [isCreating, setIsCreating] = useState(false)
   const [newPoiLocation, setNewPoiLocation] = useState<[number, number] | null>(null)
 
   useEffect(() => {
+    if (!loadingLoc) return // already loaded from localstorage
+    
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -204,17 +304,35 @@ export default function InteractiveMap({ userId }: { userId?: string }) {
     } else {
       setLoadingLoc(false)
     }
-  }, [])
+  }, [loadingLoc])
 
   const fetchPois = useCallback(async () => {
     if (!bounds) return
     try {
-      const data = await getPoisInBounds(
-        bounds.getSouth(),
-        bounds.getWest(),
-        bounds.getNorth(),
-        bounds.getEast()
-      )
+      // Calculate bounds properly handling antimeridian and zooming out
+      let minLng = bounds.getWest()
+      let maxLng = bounds.getEast()
+      const minLat = Math.max(-90, bounds.getSouth())
+      const maxLat = Math.min(90, bounds.getNorth())
+
+      if (maxLng - minLng >= 360) {
+        // If zoomed out to see the whole world, query the whole world
+        minLng = -180
+        maxLng = 180
+      } else {
+        // Normalize longitudes to -180..180
+        minLng = ((minLng + 180) % 360 + 360) % 360 - 180
+        maxLng = ((maxLng + 180) % 360 + 360) % 360 - 180
+        
+        // If normalization causes min > max (crossing antimeridian), 
+        // fallback to querying the whole world for this MVP
+        if (minLng > maxLng) {
+          minLng = -180
+          maxLng = 180
+        }
+      }
+
+      const data = await getPoisInBounds(minLat, minLng, maxLat, maxLng)
       setPois(data || [])
     } catch (e) {
       console.error(e)
@@ -237,7 +355,8 @@ export default function InteractiveMap({ userId }: { userId?: string }) {
     <div className={`h-screen w-full relative z-0 ${isCreating && !newPoiLocation ? 'cursor-crosshair' : ''}`}>
       <MapContainer 
         center={userLocation} 
-        zoom={13} 
+        zoom={mapZoom} 
+        minZoom={3}
         scrollWheelZoom={true} 
         className="h-full w-full z-0"
       >
@@ -245,7 +364,7 @@ export default function InteractiveMap({ userId }: { userId?: string }) {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
-        <UpdateCenter center={userLocation} />
+        <UpdateCenter center={userLocation} zoom={mapZoom} />
         <MapEvents 
           setBounds={setBounds} 
           isCreating={isCreating} 
@@ -332,6 +451,7 @@ export default function InteractiveMap({ userId }: { userId?: string }) {
           location={newPoiLocation} 
           onClose={() => setNewPoiLocation(null)} 
           onSuccess={() => {
+            router.refresh()
             fetchPois()
             setNewPoiLocation(null)
             setIsCreating(false)

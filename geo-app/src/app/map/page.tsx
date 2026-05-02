@@ -22,16 +22,17 @@ export default async function MapPage() {
           {user ? (
             <div className="flex gap-2">
               <Link
-                href="/my-pois"
+                href="/account/my-pois"
                 className="bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg font-semibold text-sm hover:-translate-y-0.5 transition-transform"
               >
                 My POIs
               </Link>
-              <form action={logout}>
-                <button type="submit" className="bg-slate-800 text-white px-4 py-2 rounded-full shadow-lg font-semibold text-sm hover:-translate-y-0.5 transition-transform">
-                  Logout
-                </button>
-              </form>
+              <Link
+                href="/account"
+                className="bg-slate-800 text-white px-4 py-2 rounded-full shadow-lg font-semibold text-sm hover:-translate-y-0.5 transition-transform"
+              >
+                Account
+              </Link>
             </div>
           ) : (
             <Link
