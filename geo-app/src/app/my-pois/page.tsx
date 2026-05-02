@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { deletePoi } from '@/app/actions/poi'
+import { logout } from '@/app/(auth)/actions'
 
 export default async function MyPoisPage() {
   const supabase = await createClient()
@@ -29,12 +30,14 @@ export default async function MyPoisPage() {
             >
               Map
             </Link>
-            <Link
-              href="/poi/create"
-              className="bg-emerald-500 text-white px-4 py-2 rounded-md shadow text-sm font-medium hover:bg-emerald-600 transition-colors"
-            >
-              + Create New
-            </Link>
+            <form action={logout}>
+              <button 
+                type="submit" 
+                className="bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-white px-4 py-2 rounded-md shadow text-sm font-medium hover:bg-gray-300 dark:hover:bg-slate-700 transition-colors"
+              >
+                Logout
+              </button>
+            </form>
           </div>
         </div>
 
@@ -74,10 +77,10 @@ export default async function MyPoisPage() {
           <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 p-12 text-center">
             <h3 className="text-xl font-medium text-gray-600 dark:text-gray-400 mb-4">You haven't created any POIs yet.</h3>
             <Link
-              href="/poi/create"
+              href="/map"
               className="inline-block bg-emerald-500 text-white px-6 py-3 rounded-full shadow-lg font-semibold hover:bg-emerald-600 transition-colors"
             >
-              Create Your First POI
+              Go to Map to Create a POI
             </Link>
           </div>
         )}

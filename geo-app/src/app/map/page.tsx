@@ -1,6 +1,7 @@
 import MapWrapper from '@/components/map/MapWrapper'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { logout } from '@/app/(auth)/actions'
 
 export default async function MapPage() {
   const supabase = await createClient()
@@ -19,15 +20,19 @@ export default async function MapPage() {
 
         <div className="pointer-events-auto flex gap-2">
           {user ? (
-            <form action="/auth/logout" method="post">
-              {/* Note: I'll use a direct action or an actual link since a form action would require setup. Let's just link to /my-pois */}
+            <div className="flex gap-2">
               <Link
                 href="/my-pois"
                 className="bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg font-semibold text-sm hover:-translate-y-0.5 transition-transform"
               >
                 My POIs
               </Link>
-            </form>
+              <form action={logout}>
+                <button type="submit" className="bg-slate-800 text-white px-4 py-2 rounded-full shadow-lg font-semibold text-sm hover:-translate-y-0.5 transition-transform">
+                  Logout
+                </button>
+              </form>
+            </div>
           ) : (
             <Link
               href="/login"
@@ -39,22 +44,8 @@ export default async function MapPage() {
         </div>
       </div>
 
-      {/* Floating Action Button for creating new POI */}
-      {user && (
-        <div className="absolute bottom-8 right-8 z-[1000]">
-          <Link
-            href="/poi/create"
-            className="flex items-center justify-center w-14 h-14 bg-emerald-500 text-white rounded-full shadow-xl hover:bg-emerald-600 hover:scale-110 transition-all cursor-pointer"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-          </Link>
-        </div>
-      )}
-
       {/* Map */}
-      <MapWrapper />
+      <MapWrapper userId={user?.id} />
     </div>
   )
 }

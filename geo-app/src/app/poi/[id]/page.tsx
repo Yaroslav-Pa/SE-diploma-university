@@ -1,6 +1,8 @@
 import { getPoiDetails, getComments, addComment, toggleReaction } from '@/app/actions/interaction'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import ImageCarousel from '@/components/ui/ImageCarousel'
+import CommentForm from '@/components/poi/CommentForm'
 
 export default async function PoiDetailsPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
   const supabase = await createClient()
@@ -51,6 +53,8 @@ export default async function PoiDetailsPage({ params }: { params: Promise<{ id:
             </div>
           </div>
           
+          <ImageCarousel images={poi.image_urls} />
+          
           <p className="text-lg text-gray-700 dark:text-gray-300 mb-6">{poi.description}</p>
           
           <div className="grid grid-cols-2 gap-4 text-sm text-gray-500 bg-gray-50 dark:bg-slate-800/50 p-4 rounded-lg">
@@ -77,6 +81,15 @@ export default async function PoiDetailsPage({ params }: { params: Promise<{ id:
                     <span className="text-xs text-gray-500">{new Date(comment.created_at).toLocaleString()}</span>
                   </div>
                   <p className="text-gray-800 dark:text-gray-200">{comment.content}</p>
+                  {comment.image_urls && comment.image_urls.length > 0 && (
+                    <div className="flex gap-2 mt-3 overflow-x-auto pb-2">
+                      {comment.image_urls.map((url: string, i: number) => (
+                        <a key={i} href={url} target="_blank" rel="noreferrer" className="shrink-0 hover:opacity-90 transition-opacity">
+                          <img src={url} alt="Attached" className="h-20 w-20 object-cover rounded-md border border-gray-200 dark:border-slate-700 shadow-sm" />
+                        </a>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -85,20 +98,7 @@ export default async function PoiDetailsPage({ params }: { params: Promise<{ id:
 
           {/* Add Comment Form */}
           {user ? (
-            <form action={async (formData) => {
-              'use server';
-              await addComment(poi.id, formData);
-            }} className="flex flex-col gap-4">
-              <textarea 
-                name="content" 
-                required 
-                placeholder="Write a comment..." 
-                className="w-full border rounded-lg px-4 py-3 bg-gray-50 dark:bg-slate-800 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-y min-h-[100px]" 
-              />
-              <button type="submit" className="self-end bg-blue-600 text-white font-bold py-2 px-6 rounded-md hover:bg-blue-700 transition-colors">
-                Post Comment
-              </button>
-            </form>
+            <CommentForm poiId={poi.id} />
           ) : (
             <div className="p-4 bg-gray-100 dark:bg-slate-800 rounded-lg text-center text-gray-600">
               Please <Link href="/login" className="text-blue-600 hover:underline font-medium">sign in</Link> to leave a comment.

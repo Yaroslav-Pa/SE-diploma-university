@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS public.pois (
   location GEOGRAPHY(POINT, 4326) NOT NULL, -- Longitude/Latitude
   start_date TIMESTAMP WITH TIME ZONE,
   end_date TIMESTAMP WITH TIME ZONE,
+  image_urls TEXT[] DEFAULT '{}',
   upvotes INTEGER DEFAULT 0,
   downvotes INTEGER DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -33,6 +34,7 @@ CREATE TABLE IF NOT EXISTS public.comments (
   poi_id UUID REFERENCES public.pois(id) ON DELETE CASCADE NOT NULL,
   user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
   content TEXT NOT NULL,
+  image_urls TEXT[] DEFAULT '{}',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

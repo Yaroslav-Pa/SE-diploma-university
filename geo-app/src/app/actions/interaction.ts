@@ -14,10 +14,30 @@ export async function addComment(poiId: string, formData: FormData) {
   const content = formData.get('content') as string
   if (!content) throw new Error('Comment content is required')
 
+  const imageFiles = formData.getAll('images') as File[]
+  const imageUrls: string[] = []
+
+  for (const file of imageFiles) {
+    if (file.size === 0) continue
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
+    
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('poi-images')
+      .upload(fileName, file)
+      
+    if (uploadError) {
+      console.error('Upload error:', uploadError)
+    } else if (uploadData) {
+      const { data: publicUrlData } = supabase.storage.from('poi-images').getPublicUrl(fileName)
+      imageUrls.push(publicUrlData.publicUrl)
+    }
+  }
+
   const { error } = await supabase.from('comments').insert({
     poi_id: poiId,
     user_id: user.id,
-    content
+    content,
+    image_urls: imageUrls
   })
 
   if (error) {
