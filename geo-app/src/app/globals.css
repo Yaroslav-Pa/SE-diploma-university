@@ -46,3 +46,11 @@ body {
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #475569; /* tailwind slate-600 */
 }
+
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+.animate-slide-in {
+  animation: slideIn 0.25s ease-out;
+}

@@ -6,13 +6,14 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { getPoisInBounds, Poi, createPoi } from '@/app/actions/poi'
 import toast from 'react-hot-toast'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import PoiDetailPanel from '@/components/map/PoiDetailPanel'
 
 // Custom category icons
 const getCategoryIcon = (category: string) => {
   let iconHtml = '📍';
   let bgColor = 'bg-blue-500';
-  switch(category) {
+  switch (category) {
     case 'fair': iconHtml = '🎪'; bgColor = 'bg-purple-500'; break;
     case 'sale': iconHtml = '🏷️'; bgColor = 'bg-red-500'; break;
     case 'opening': iconHtml = '🎉'; bgColor = 'bg-yellow-500'; break;
@@ -36,14 +37,14 @@ const NewPoiIcon = L.divIcon({
   popupAnchor: [0, -40]
 });
 
-function MapEvents({ 
-  setBounds, 
-  isCreating, 
-  setNewPoiLocation 
-}: { 
+function MapEvents({
+  setBounds,
+  isCreating,
+  setNewPoiLocation
+}: {
   setBounds: (b: L.LatLngBounds) => void,
   isCreating: boolean,
-  setNewPoiLocation: (loc: [number, number] | null) => void 
+  setNewPoiLocation: (loc: [number, number] | null) => void
 }) {
   const map = useMapEvents({
     moveend: () => {
@@ -68,7 +69,7 @@ function MapEvents({
       }
     }
   })
-  
+
   useEffect(() => {
     setBounds(map.getBounds())
   }, [map, setBounds])
@@ -81,7 +82,7 @@ function UpdateCenter({ center, zoom }: { center: [number, number], zoom: number
   useEffect(() => {
     // Only flyTo if the map's current center is significantly different
     const currentCenter = map.getCenter()
-    if (Math.abs(currentCenter.lat - center[0]) > 0.001 || Math.abs(currentCenter.lng - center[1]) > 0.001) {
+    if (Math.abs(currentCenter.lat - center[0]) > 0.001 || Math.abs(currentCenter.lng - center[1]) > 0.001 || map.getZoom() !== zoom) {
       map.flyTo(center, zoom, { duration: 1.5 })
     }
   }, [center, map, zoom])
@@ -92,30 +93,30 @@ import imageCompression from 'browser-image-compression'
 
 // ... existing code down to PoiCreationModal
 
-function PoiCreationModal({ 
-  location, 
-  onClose, 
-  onSuccess 
-}: { 
-  location: [number, number], 
-  onClose: () => void, 
-  onSuccess: () => void 
+function PoiCreationModal({
+  location,
+  onClose,
+  onSuccess
+}: {
+  location: [number, number],
+  onClose: () => void,
+  onSuccess: () => void
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [photos, setPhotos] = useState<File[]>([])
   const [coverIndex, setCoverIndex] = useState<number>(0)
-  
+
   const now = new Date()
   const minDate = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16)
   const maxDate = new Date(now.getFullYear() + 5, now.getMonth(), now.getDate()).toISOString().slice(0, 16)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    
+
     const formData = new FormData(e.currentTarget)
     const startDate = formData.get('startDate') as string
     const endDate = formData.get('endDate') as string
-    
+
     if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
       toast.error("Start Date cannot be after End Date")
       return
@@ -125,7 +126,7 @@ function PoiCreationModal({
     try {
       formData.append('lat', location[0].toString())
       formData.append('lng', location[1].toString())
-      
+
       // Reorder photos so cover is first
       const orderedPhotos = [...photos]
       if (orderedPhotos.length > 0 && coverIndex !== 0) {
@@ -163,7 +164,7 @@ function PoiCreationModal({
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <input required name="title" className="w-full border rounded-md px-3 py-2 bg-transparent dark:border-slate-700 text-sm" placeholder="Title (e.g., Grand Opening)" />
         <textarea name="description" className="w-full border rounded-md px-3 py-2 bg-transparent dark:border-slate-700 text-sm min-h-[60px]" placeholder="Description..." />
-        
+
         <div>
           <div className="flex items-center gap-2 mb-1">
             <label className="text-[10px] uppercase text-gray-500">Add Photos</label>
@@ -173,10 +174,10 @@ function PoiCreationModal({
               </button>
             )}
           </div>
-          <input 
-            type="file" 
-            accept="image/*" 
-            multiple 
+          <input
+            type="file"
+            accept="image/*"
+            multiple
             onChange={(e) => {
               const newFiles = Array.from(e.target.files || [])
               setPhotos(prev => [...prev, ...newFiles])
@@ -197,9 +198,9 @@ function PoiCreationModal({
                     </div>
                   )}
                   {coverIndex !== idx && (
-                     <div onClick={() => setCoverIndex(idx)} className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[10px] font-bold text-center p-1 rounded-md transition-opacity leading-none">Set Cover</div>
+                    <div onClick={() => setCoverIndex(idx)} className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[10px] font-bold text-center p-1 rounded-md transition-opacity leading-none">Set Cover</div>
                   )}
-                  <button 
+                  <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -224,7 +225,7 @@ function PoiCreationModal({
           <option value="event" className="text-black">Temporary Event 📅</option>
           <option value="other" className="text-black">Other 📍</option>
         </select>
-        
+
         <div className="flex flex-col gap-2">
           <div className="flex-1 min-w-0">
             <label className="block text-[10px] uppercase text-gray-500 mb-1">Start Date</label>
@@ -235,8 +236,8 @@ function PoiCreationModal({
             <input type="datetime-local" min={minDate} name="endDate" required className="w-full border rounded-md px-2 py-1.5 bg-transparent dark:border-slate-700 text-xs" />
           </div>
         </div>
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           disabled={isSubmitting}
           className="mt-2 w-full bg-emerald-500 text-white font-bold py-2 rounded-md hover:bg-emerald-600 transition-colors disabled:opacity-50"
         >
@@ -249,9 +250,10 @@ function PoiCreationModal({
 
 export default function InteractiveMap({ userId }: { userId?: string }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [pois, setPois] = useState<Poi[]>([])
   const [bounds, setBounds] = useState<L.LatLngBounds | null>(null)
-  
+
   const [userLocation, setUserLocation] = useState<[number, number]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('mapPos')
@@ -259,12 +261,12 @@ export default function InteractiveMap({ userId }: { userId?: string }) {
         try {
           const { lat, lng } = JSON.parse(saved)
           return [lat, lng]
-        } catch(e) {}
+        } catch (e) { }
       }
     }
     return [51.505, -0.09] // Default London
   })
-  
+
   const [mapZoom, setMapZoom] = useState<number>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('mapPos')
@@ -272,24 +274,58 @@ export default function InteractiveMap({ userId }: { userId?: string }) {
         try {
           const { zoom } = JSON.parse(saved)
           return zoom
-        } catch(e) {}
+        } catch (e) { }
       }
     }
     return 13
   })
-  
+
   const [loadingLoc, setLoadingLoc] = useState(() => {
     if (typeof window !== 'undefined' && localStorage.getItem('mapPos')) return false
     return true
   })
-  
+
   // Create mode state
   const [isCreating, setIsCreating] = useState(false)
   const [newPoiLocation, setNewPoiLocation] = useState<[number, number] | null>(null)
+  const [centeredPoiId, setCenteredPoiId] = useState<string | null>(null)
+
+  const selectedPoiId = searchParams.get('poi')
+
+  // Handle POI selection from URL
+  useEffect(() => {
+    if (selectedPoiId) {
+      // Only center if we haven't centered on this specific ID yet
+      if (selectedPoiId !== centeredPoiId) {
+        const poi = pois.find(p => p.id === selectedPoiId)
+        if (poi) {
+          let coords = [0, 0]
+          try {
+            const loc = typeof poi.location === 'string' ? JSON.parse(poi.location) : poi.location
+            if (loc && loc.coordinates) {
+              coords = loc.coordinates
+              setUserLocation([coords[1], coords[0]])
+              setMapZoom(15)
+              setCenteredPoiId(selectedPoiId) // Mark as centered
+            }
+          } catch (e) {}
+        }
+      }
+    } else {
+      setCenteredPoiId(null)
+    }
+  }, [selectedPoiId, pois, centeredPoiId])
+
+  const handleCloseDetail = () => {
+    setCenteredPoiId(null)
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete('poi')
+    router.replace(`/map?${params.toString()}`, { scroll: false })
+  }
 
   useEffect(() => {
     if (!loadingLoc) return // already loaded from localstorage
-    
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -305,6 +341,21 @@ export default function InteractiveMap({ userId }: { userId?: string }) {
       setLoadingLoc(false)
     }
   }, [loadingLoc])
+
+  const handleLocateMe = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation([position.coords.latitude, position.coords.longitude])
+          setMapZoom(15)
+        },
+        () => {
+          // Silently fail — location may not be available
+          console.warn('Geolocation not available')
+        }
+      )
+    }
+  }
 
   const fetchPois = useCallback(async () => {
     if (!bounds) return
@@ -323,7 +374,7 @@ export default function InteractiveMap({ userId }: { userId?: string }) {
         // Normalize longitudes to -180..180
         minLng = ((minLng + 180) % 360 + 360) % 360 - 180
         maxLng = ((maxLng + 180) % 360 + 360) % 360 - 180
-        
+
         // If normalization causes min > max (crossing antimeridian), 
         // fallback to querying the whole world for this MVP
         if (minLng > maxLng) {
@@ -353,11 +404,11 @@ export default function InteractiveMap({ userId }: { userId?: string }) {
 
   return (
     <div className={`h-screen w-full relative z-0 ${isCreating && !newPoiLocation ? 'cursor-crosshair' : ''}`}>
-      <MapContainer 
-        center={userLocation} 
-        zoom={mapZoom} 
+      <MapContainer
+        center={userLocation}
+        zoom={mapZoom}
         minZoom={3}
-        scrollWheelZoom={true} 
+        scrollWheelZoom={true}
         className="h-full w-full z-0"
       >
         <TileLayer
@@ -365,12 +416,12 @@ export default function InteractiveMap({ userId }: { userId?: string }) {
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
         <UpdateCenter center={userLocation} zoom={mapZoom} />
-        <MapEvents 
-          setBounds={setBounds} 
-          isCreating={isCreating} 
-          setNewPoiLocation={setNewPoiLocation} 
+        <MapEvents
+          setBounds={setBounds}
+          isCreating={isCreating}
+          setNewPoiLocation={setNewPoiLocation}
         />
-        
+
         {/* Render New POI Pin if in create mode and location selected */}
         {newPoiLocation && (
           <Marker position={newPoiLocation} icon={NewPoiIcon} />
@@ -384,12 +435,12 @@ export default function InteractiveMap({ userId }: { userId?: string }) {
             if (loc && loc.coordinates) {
               coords = loc.coordinates
             }
-          } catch(e) {}
-          
+          } catch (e) { }
+
           const lat = coords[1]
           const lng = coords[0]
           if (!lat || !lng) return null
-          
+
           return (
             <Marker key={poi.id} position={[lat, lng]} icon={getCategoryIcon(poi.category)}>
               <Popup>
@@ -406,12 +457,19 @@ export default function InteractiveMap({ userId }: { userId?: string }) {
                     <span className="text-emerald-600 font-semibold">👍 {poi.upvotes}</span>
                     <span className="text-rose-600 font-semibold">👎 {poi.downvotes}</span>
                   </div>
-                  <a 
-                    href={`/poi/${poi.id}`} 
-                    className="block text-center bg-blue-600 !text-white text-xs font-bold py-1.5 rounded hover:bg-blue-700 transition-colors no-underline"
+                  <button
+                    onClick={() => {
+                      const params = new URLSearchParams(searchParams.toString())
+                      params.set('poi', poi.id)
+                      router.push(`/map?${params.toString()}`, { scroll: false })
+                      setUserLocation([lat, lng])
+                      setMapZoom(15)
+                      setCenteredPoiId(poi.id)
+                    }}
+                    className="block w-full text-center bg-blue-600 text-white text-xs font-bold py-1.5 rounded hover:bg-blue-700 transition-colors cursor-pointer border-0"
                   >
                     View Details & Comments
-                  </a>
+                  </button>
                 </div>
               </Popup>
             </Marker>
@@ -419,43 +477,76 @@ export default function InteractiveMap({ userId }: { userId?: string }) {
         })}
       </MapContainer>
 
-      {/* Floating Action Button for Create Mode */}
-      {userId && (
-        <div className="absolute bottom-8 right-8 z-[1000] flex flex-col items-end gap-3 pointer-events-none">
-          {isCreating && !newPoiLocation && (
-            <div className="bg-white dark:bg-slate-800 px-4 py-2 rounded-full shadow-lg text-sm font-bold text-emerald-600 dark:text-emerald-400 animate-bounce pointer-events-auto border-2 border-emerald-500">
-              Click anywhere on the map to drop a pin!
-            </div>
-          )}
-          <button 
-            onClick={() => {
-              setIsCreating(!isCreating)
-              setNewPoiLocation(null)
-            }}
-            className={`pointer-events-auto flex items-center justify-center w-14 h-14 text-white rounded-full shadow-xl hover:scale-110 transition-all ${isCreating ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'}`}
+      {/* Floating Action Buttons */}
+      <div className="absolute bottom-8 right-4 z-[1000] flex flex-col items-end gap-3 pointer-events-none">
+        {userId && isCreating && !newPoiLocation && (
+          <div className="bg-white dark:bg-slate-800 px-4 py-2 rounded-full shadow-lg text-sm font-bold text-emerald-600 dark:text-emerald-400 animate-bounce pointer-events-auto border-2 border-emerald-500">
+            Click anywhere on the map to drop a pin!
+          </div>
+        )}
+        <div className="flex gap-3 items-center">
+          <button
+            onClick={handleLocateMe}
+            title="Go to my location"
+            className="pointer-events-auto group flex items-center gap-2 h-12 px-4 bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 rounded-full shadow-xl hover:scale-105 transition-all border border-gray-200 dark:border-slate-700"
           >
-            {isCreating ? (
-              <span className="text-2xl font-bold">✕</span>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-            )}
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 shrink-0">
+              <path fillRule="evenodd" d="M11.99 2a1 1 0 00-1 1v1.07A8.003 8.003 0 004.07 11H3a1 1 0 100 2h1.07a8.003 8.003 0 006.92 6.93V21a1 1 0 102 0v-1.07a8.003 8.003 0 006.93-6.93H21a1 1 0 100-2h-1.07A8.003 8.003 0 0013 4.07V3a1 1 0 00-1.01-1zm0 4a6 6 0 100 12 6 6 0 000-12zm0 4a2 2 0 100 4 2 2 0 000-4z" clipRule="evenodd" />
+            </svg>
+            <span className="text-xs font-semibold whitespace-nowrap">My Location</span>
           </button>
+
+          {userId && (
+            <button
+              onClick={() => {
+                setIsCreating(!isCreating)
+                setNewPoiLocation(null)
+              }}
+              title={isCreating ? 'Cancel' : 'Create POI'}
+              className={`pointer-events-auto group flex items-center gap-2 h-12 px-4 text-white rounded-full shadow-xl hover:scale-105 transition-all ${isCreating ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'}`}
+            >
+              {isCreating ? (
+                <>
+                  <span className="text-lg font-bold">✕</span>
+                  <span className="text-xs font-semibold whitespace-nowrap">Cancel</span>
+                </>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span className="text-xs font-semibold whitespace-nowrap">Create POI</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Creation Modal Overlay */}
       {newPoiLocation && (
-        <PoiCreationModal 
-          location={newPoiLocation} 
-          onClose={() => setNewPoiLocation(null)} 
+        <PoiCreationModal
+          location={newPoiLocation}
+          onClose={() => setNewPoiLocation(null)}
           onSuccess={() => {
             router.refresh()
             fetchPois()
             setNewPoiLocation(null)
             setIsCreating(false)
-          }} 
+          }}
+        />
+      )}
+
+      {/* POI Detail Panel */}
+      {selectedPoiId && (
+        <PoiDetailPanel
+          poiId={selectedPoiId}
+          userId={userId}
+          onClose={handleCloseDetail}
+          onPoiLoaded={(lat, lng) => {
+            setUserLocation([lat, lng])
+            setMapZoom(15)
+          }}
         />
       )}
     </div>

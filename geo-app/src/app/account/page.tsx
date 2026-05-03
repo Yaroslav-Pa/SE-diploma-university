@@ -1,13 +1,25 @@
 import { createClient } from '@/lib/supabase/server'
 import { logout } from '@/app/(auth)/actions'
 import { updateEmail, updatePassword } from './actions'
+import ToastNotification from '@/components/ToastNotification'
 
-export default async function AccountSettingsPage() {
+export default async function AccountSettingsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ message?: string }>
+}) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  const resolvedParams = searchParams ? await searchParams : {};
+  const message = resolvedParams?.message;
+
   return (
     <div className="max-w-2xl flex flex-col gap-8">
+      <ToastNotification 
+        message={message} 
+        type={message?.toLowerCase().includes('success') ? 'success' : 'error'} 
+      />
       <div>
         <h1 className="text-2xl font-bold mb-1">Settings</h1>
         <p className="text-gray-500 dark:text-gray-400">Manage your account details and security.</p>

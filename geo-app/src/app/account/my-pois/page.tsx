@@ -40,7 +40,7 @@ export default async function MyPoisPage() {
               </div>
 
               <div className="flex gap-2">
-                <Link href={`/poi/${poi.id}`} className="flex-1 flex items-center justify-center text-center bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md text-sm font-semibold transition-colors">
+                <Link href={`/map?poi=${poi.id}`} className="flex-1 flex items-center justify-center text-center bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md text-sm font-semibold transition-colors">
                   View Details
                 </Link>
                 <form action={async () => {

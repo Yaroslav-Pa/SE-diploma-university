@@ -13,7 +13,7 @@ export default async function MapPage() {
       <div className="absolute top-0 left-0 w-full p-4 z-[1000] pointer-events-none flex justify-between items-start">
         <Link
           href="/"
-          className="pointer-events-auto bg-white/90 dark:bg-black/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-gray-200 dark:border-gray-800 font-semibold text-sm hover:-translate-y-0.5 transition-transform"
+          className="pointer-events-auto ml-12 bg-white/90 dark:bg-black/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-gray-200 dark:border-gray-800 font-semibold text-sm hover:-translate-y-0.5 transition-transform"
         >
           Geo-Social
         </Link>
