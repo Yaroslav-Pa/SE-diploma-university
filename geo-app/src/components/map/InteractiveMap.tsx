@@ -113,9 +113,31 @@ function PoiCreationModal({
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
-    const formData = new FormData(e.currentTarget)
-    const startDate = formData.get('startDate') as string
-    const endDate = formData.get('endDate') as string
+    const form = e.currentTarget
+    const formData = new FormData(form)
+
+    // Combine split date + time fields into datetime strings
+    const startDateVal = formData.get('startDate_date') as string
+    const startTimeVal = (formData.get('startDate_time') as string)
+    const endDateVal = formData.get('endDate_date') as string
+    const endTimeVal = (formData.get('endDate_time') as string)
+
+    if (!endDateVal) {
+      toast.error("End Date is required")
+      return
+    }
+
+    if (!endTimeVal) {
+      toast.error("End Time is required")
+      return
+    }
+
+    const startDate = startDateVal ? `${startDateVal}T${startTimeVal}` : ''
+    const endDate = endDateVal ? `${endDateVal}T${endTimeVal}` : ''
+
+    // Overwrite hidden fields
+    formData.set('startDate', startDate)
+    formData.set('endDate', endDate)
 
     if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
       toast.error("Start Date cannot be after End Date")
@@ -156,7 +178,7 @@ function PoiCreationModal({
   }
 
   return (
-    <div className="absolute bottom-24 right-8 z-[2000] w-[360px] bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-gray-200 dark:border-slate-800 p-6 pointer-events-auto overflow-y-auto max-h-[75vh]">
+    <div className="absolute bottom-24 right-8 z-[2000] w-[420px] bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-gray-200 dark:border-slate-800 p-6 pointer-events-auto overflow-y-auto max-h-[75vh]">
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-bold text-lg">Create New Event</h3>
         <button type="button" onClick={onClose} className="text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 text-xl font-bold">&times;</button>
@@ -226,15 +248,52 @@ function PoiCreationModal({
           <option value="other" className="text-black">Other 📍</option>
         </select>
 
-        <div className="flex flex-col gap-2">
-          <div className="flex-1 min-w-0">
-            <label className="block text-[10px] uppercase text-gray-500 mb-1">Start Date</label>
-            <input type="datetime-local" min={minDate} name="startDate" className="w-full border rounded-md px-2 py-1.5 bg-transparent dark:border-slate-700 text-xs" />
+        {/* Start Date */}
+        <div className="rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-950/20 overflow-hidden">
+          <div className="flex items-center gap-2 px-3 pt-2.5 pb-1">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-emerald-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Start Date</span>
+            <span className="ml-auto text-[9px] text-gray-400 italic">optional</span>
           </div>
-          <div className="flex-1 min-w-0">
-            <label className="block text-[10px] uppercase text-gray-500 mb-1">End Date*</label>
-            <input type="datetime-local" min={minDate} name="endDate" required className="w-full border rounded-md px-2 py-1.5 bg-transparent dark:border-slate-700 text-xs" />
+          <div className="flex gap-2 px-3 pb-2.5">
+            <input
+              type="date"
+              min={minDate.slice(0, 10)}
+              name="startDate_date"
+              className="flex-1 min-w-0 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400 transition-all cursor-pointer"
+            />
+            <input
+              type="time"
+              name="startDate_time"
+              className="w-[120px] shrink-0 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400 transition-all cursor-pointer"
+            />
           </div>
+          <input type="hidden" name="startDate" id="startDateHidden" />
+        </div>
+
+        {/* End Date */}
+        <div className="rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-950/20 overflow-hidden">
+          <div className="flex items-center gap-2 px-3 pt-2.5 pb-1">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-rose-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-rose-600 dark:text-rose-400">End Date</span>
+            <span className="ml-auto text-[9px] font-bold text-rose-400">required</span>
+          </div>
+          <div className="flex gap-2 px-3 pb-2.5">
+            <input
+              type="date"
+              min={minDate.slice(0, 10)}
+              name="endDate_date"
+              required
+              className="flex-1 min-w-0 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-rose-400/40 focus:border-rose-400 transition-all cursor-pointer"
+            />
+            <input
+              type="time"
+              name="endDate_time"
+              required
+              className="w-[120px] shrink-0 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-rose-400/40 focus:border-rose-400 transition-all cursor-pointer"
+            />
+          </div>
+          <input type="hidden" name="endDate" id="endDateHidden" />
         </div>
         <button
           type="submit"
@@ -308,7 +367,7 @@ export default function InteractiveMap({ userId }: { userId?: string }) {
               setMapZoom(15)
               setCenteredPoiId(selectedPoiId) // Mark as centered
             }
-          } catch (e) {}
+          } catch (e) { }
         }
       }
     } else {
@@ -403,7 +462,7 @@ export default function InteractiveMap({ userId }: { userId?: string }) {
   }
 
   return (
-    <div className={`h-screen w-full relative z-0 ${isCreating && !newPoiLocation ? 'cursor-crosshair' : ''}`}>
+    <div className={`h-screen w-full relative ${isCreating && !newPoiLocation ? 'cursor-crosshair' : ''}`}>
       <MapContainer
         center={userLocation}
         zoom={mapZoom}
@@ -530,9 +589,11 @@ export default function InteractiveMap({ userId }: { userId?: string }) {
           onClose={() => setNewPoiLocation(null)}
           onSuccess={() => {
             router.refresh()
-            fetchPois()
-            setNewPoiLocation(null)
-            setIsCreating(false)
+            setTimeout(() => {
+              fetchPois()
+              setNewPoiLocation(null)
+              setIsCreating(false)
+            }, 500)
           }}
         />
       )}

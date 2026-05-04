@@ -6,7 +6,7 @@ import ImageCarousel from '@/components/ui/ImageCarousel'
 import imageCompression from 'browser-image-compression'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
-import { X, MessageSquare, ThumbsUp, ThumbsDown, Calendar, User, Clock, MapPin, Plus } from 'lucide-react'
+import { X, MessageSquare, ThumbsUp, ThumbsDown, User, Clock, MapPin, Plus } from 'lucide-react'
 
 interface PoiDetailPanelProps {
   poiId: string
@@ -31,14 +31,14 @@ export default function PoiDetailPanel({ poiId, userId, onClose, onPoiLoaded }: 
       ])
       setPoi(poiData)
       setComments(commentsData)
-      
+
       if (onPoiLoaded && poiData.location) {
         try {
           const loc = typeof poiData.location === 'string' ? JSON.parse(poiData.location) : poiData.location
           if (loc && loc.coordinates) {
             onPoiLoaded(loc.coordinates[1], loc.coordinates[0])
           }
-        } catch (e) {}
+        } catch (e) { }
       }
     } catch (e) {
       console.error(e)
@@ -65,7 +65,7 @@ export default function PoiDetailPanel({ poiId, userId, onClose, onPoiLoaded }: 
     try {
       const formData = new FormData()
       formData.set('content', commentText)
-      
+
       // Compress and add all photos
       for (const file of photos) {
         try {
@@ -79,7 +79,7 @@ export default function PoiDetailPanel({ poiId, userId, onClose, onPoiLoaded }: 
           formData.append('images', file)
         }
       }
-      
+
       await addComment(poiId, formData)
       setCommentText('')
       setPhotos([])
@@ -114,16 +114,16 @@ export default function PoiDetailPanel({ poiId, userId, onClose, onPoiLoaded }: 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-800 bg-white/90 dark:bg-slate-950/90 backdrop-blur-sm shrink-0">
           <div className="flex items-center gap-3">
-             <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
-               <MapPin size={18} />
-             </div>
-             <div>
-               <h2 className="font-bold text-lg tracking-tight leading-none">{poi?.title || 'Loading...'}</h2>
-               {poi && <span className="text-[9px] font-bold uppercase tracking-widest text-gray-400">{poi.category}</span>}
-             </div>
+            <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
+              <MapPin size={18} />
+            </div>
+            <div>
+              <h2 className="font-bold text-lg tracking-tight leading-none">{poi?.title || 'Loading...'}</h2>
+              {poi && <span className="text-[9px] font-bold uppercase tracking-widest text-gray-400">{poi.category}</span>}
+            </div>
           </div>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-all text-gray-400 hover:text-gray-900 dark:hover:text-white"
           >
             <X size={20} />
@@ -137,12 +137,12 @@ export default function PoiDetailPanel({ poiId, userId, onClose, onPoiLoaded }: 
           </div>
         ) : poi ? (
           <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-            
+
             {/* Left Column: Media & Core Info */}
             <div className="lg:w-[60%] border-r border-gray-100 dark:border-slate-800 flex flex-col overflow-y-auto custom-scrollbar">
               <div className="p-6 sm:p-8">
                 <ImageCarousel images={poi.image_urls} />
-                
+
                 <div className="mt-6">
                   <div className="flex flex-wrap items-center gap-3 mb-4">
                     <span className="px-3 py-1 rounded-full bg-blue-600 text-white text-[10px] font-bold shadow-lg shadow-blue-500/10">
@@ -163,21 +163,92 @@ export default function PoiDetailPanel({ poiId, userId, onClose, onPoiLoaded }: 
                     {poi.description}
                   </p>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="p-3 bg-gray-50 dark:bg-slate-900/50 rounded-xl border border-gray-100 dark:border-slate-800">
-                      <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-1">
-                        <Calendar size={14} />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">Start</span>
-                      </div>
-                      <p className="text-sm font-bold">{poi.start_date ? new Date(poi.start_date).toLocaleString() : 'Open Access'}</p>
-                    </div>
-                    <div className="p-3 bg-gray-50 dark:bg-slate-900/50 rounded-xl border border-gray-100 dark:border-slate-800">
-                      <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 mb-1">
-                        <Calendar size={14} />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">End</span>
-                      </div>
-                      <p className="text-sm font-bold">{poi.end_date ? new Date(poi.end_date).toLocaleString() : 'Permanent'}</p>
-                    </div>
+                  {/* Timeline Date Section */}
+                  <div className="mt-2">
+                    {(() => {
+                      const now = new Date()
+                      const start = poi.start_date ? new Date(poi.start_date) : null
+                      const end = poi.end_date ? new Date(poi.end_date) : null
+                      // No start_date = already in progress
+                      const hasStarted = !start || start <= now
+                      const msLeft = end ? end.getTime() - now.getTime() : null
+                      const isOver = msLeft !== null && msLeft <= 0
+
+                      // Status badge
+                      let statusColor = 'bg-emerald-500'
+                      let statusLabel = 'Live'
+                      let statusPulse = true
+                      if (!hasStarted) { statusColor = 'bg-blue-500'; statusLabel = 'Upcoming'; statusPulse = false }
+                      if (isOver) { statusColor = 'bg-gray-400'; statusLabel = 'Ended'; statusPulse = false }
+
+                      return (
+                        <div className="rounded-2xl overflow-hidden border border-gray-100 dark:border-slate-800 bg-gradient-to-br from-gray-50 to-white dark:from-slate-900/60 dark:to-slate-950/40">
+                          {/* Status bar */}
+                          <div className={`flex items-center gap-2 px-4 py-2 ${isOver ? 'bg-gray-100 dark:bg-slate-800/60' : hasStarted ? 'bg-emerald-50 dark:bg-emerald-950/30' : 'bg-blue-50 dark:bg-blue-950/30'}`}>
+                            <span className="flex items-center gap-1.5">
+                              {statusPulse && <span className={`w-2 h-2 rounded-full ${statusColor} animate-pulse`} />}
+                              {!statusPulse && <span className={`w-2 h-2 rounded-full ${statusColor}`} />}
+                              <span className={`text-[10px] font-black uppercase tracking-widest ${isOver ? 'text-gray-500' : hasStarted ? 'text-emerald-700 dark:text-emerald-400' : 'text-blue-700 dark:text-blue-400'}`}>
+                                {statusLabel}
+                              </span>
+                            </span>
+                            {!isOver && end && msLeft !== null && msLeft > 0 && hasStarted && (
+                              <span className="ml-auto flex items-center gap-1 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 px-2.5 py-0.5 rounded-full text-[11px] font-bold tabular-nums">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                                {(() => {
+                                  const totalMins = Math.floor(msLeft / 60000)
+                                  const d = Math.floor(totalMins / 1440)
+                                  const h = Math.floor((totalMins % 1440) / 60)
+                                  const m = totalMins % 60
+                                  return [d > 0 && `${d}d`, (d > 0 || h > 0) && `${h}h`, `${m}m`].filter(Boolean).join(' ')
+                                })()}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Date rows */}
+                          <div className="flex flex-col divide-y divide-gray-100 dark:divide-slate-800">
+                            {/* Start (Only if start_date exists) */}
+                            {start && (
+                              <div className="flex items-center gap-3 px-4 py-3">
+                                <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${hasStarted ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-blue-100 dark:bg-blue-900/30'}`}>
+                                  <svg xmlns="http://www.w3.org/2000/svg" className={`w-3.5 h-3.5 ${hasStarted ? 'text-emerald-600 dark:text-emerald-400' : 'text-blue-600 dark:text-blue-400'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">Start</p>
+                                  <p className="text-sm font-bold leading-tight">
+                                    {start.toLocaleString('en-US', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* End */}
+                            <div className="flex items-center gap-3 px-4 py-3">
+                              <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${isOver ? 'bg-gray-100 dark:bg-slate-800' : 'bg-rose-100 dark:bg-rose-900/30'}`}>
+                                <svg xmlns="http://www.w3.org/2000/svg" className={`w-3.5 h-3.5 ${isOver ? 'text-gray-400' : 'text-rose-500 dark:text-rose-400'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="9" y1="9" x2="15" y2="15" /><line x1="15" y1="9" x2="9" y2="15" /></svg>
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">End</p>
+                                {end ? (
+                                  isOver ? (
+                                    <p className="text-sm font-bold text-gray-400 leading-tight">
+                                      {end.toLocaleString('en-US', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                    </p>
+                                  ) : (
+                                    <p className="text-sm font-bold leading-tight">
+                                      {end.toLocaleString('en-US', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                    </p>
+                                  )
+                                ) : (
+                                  <p className="text-xs font-semibold text-gray-500 italic">No end date · Permanent</p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })()}
                   </div>
                 </div>
               </div>
@@ -185,7 +256,7 @@ export default function PoiDetailPanel({ poiId, userId, onClose, onPoiLoaded }: 
 
             {/* Right Column: Reactions & Comments */}
             <div className="lg:w-[40%] flex flex-col bg-gray-50/30 dark:bg-slate-900/10">
-              
+
               {/* Feedback Area */}
               <div className="p-6 border-b border-gray-100 dark:border-slate-800 shrink-0">
                 <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
@@ -257,14 +328,14 @@ export default function PoiDetailPanel({ poiId, userId, onClose, onPoiLoaded }: 
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <label className="cursor-pointer p-1.5 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-500 rounded-lg transition-all" title="Attach photos">
-                             <input 
-                              type="file" 
-                              accept="image/*" 
-                              multiple 
-                              onChange={handlePhotoAdd} 
-                              className="hidden" 
+                            <input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              onChange={handlePhotoAdd}
+                              className="hidden"
                             />
-                             <Plus size={18} />
+                            <Plus size={18} />
                           </label>
                           {photos.length > 0 && <span className="text-[9px] font-bold text-blue-500 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-md">+{photos.length}</span>}
                         </div>
@@ -272,19 +343,19 @@ export default function PoiDetailPanel({ poiId, userId, onClose, onPoiLoaded }: 
                           {submitting ? 'Post...' : 'Post'}
                         </button>
                       </div>
-                      
+
                       {/* Photo Previews */}
                       {photos.length > 0 && (
                         <div className="flex gap-2 overflow-x-auto pb-2 pt-1 custom-scrollbar overflow-visible">
                           {photos.map((file, idx) => (
                             <div key={idx} className="relative shrink-0 w-14 h-14">
-                              <img 
-                                src={URL.createObjectURL(file)} 
-                                alt="" 
-                                className="w-full h-full object-cover rounded-xl border border-gray-200 dark:border-slate-800" 
+                              <img
+                                src={URL.createObjectURL(file)}
+                                alt=""
+                                className="w-full h-full object-cover rounded-xl border border-gray-200 dark:border-slate-800"
                               />
-                              <button 
-                                type="button" 
+                              <button
+                                type="button"
                                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); removePhoto(idx); }}
                                 className="absolute -top-1.5 -right-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center shadow-lg border border-white dark:border-slate-800 z-10 transition-colors pointer-events-auto"
                               >

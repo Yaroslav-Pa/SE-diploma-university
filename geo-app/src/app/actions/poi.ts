@@ -110,12 +110,18 @@ export async function createPoi(formData: FormData) {
     }
   }
 
+  const point = new wkx.Point(lng, lat)
+  point.srid = 4326
+  const locationWkb = point.toWkb().toString('hex')
+
+  console.log('Creating POI with location:', `POINT(${lng} ${lat})`, 'WKB:', locationWkb)
+
   const { error } = await supabase.from('pois').insert({
     creator_id: user.id,
     title,
     description,
     category,
-    location: `POINT(${lng} ${lat})`,
+    location: locationWkb,
     start_date: startDate ? new Date(startDate).toISOString() : null,
     end_date: endDate ? new Date(endDate).toISOString() : null,
     image_urls: imageUrls
