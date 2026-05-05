@@ -28,6 +28,15 @@ export async function signup(formData: FormData) {
   const password = formData.get('password') as string
   const username = formData.get('username') as string
 
+  const { count } = await supabase
+    .from('users')
+    .select('id', { count: 'exact', head: true })
+    .eq('username', username)
+
+  if (count && count > 0) {
+    redirect('/register?message=' + encodeURIComponent('Username is already taken'))
+  }
+
   // Note: Assuming email confirmations are disabled for development, or using a trigger.
   const { error, data } = await supabase.auth.signUp({
     email,

@@ -19,6 +19,29 @@ export async function updateEmail(formData: FormData) {
   redirect('/account?message=Email updated successfully')
 }
 
+export async function updateUsername(formData: FormData) {
+  const username = (formData.get('username') as string)?.trim()
+  if (!username) redirect('/account?message=Username is required')
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { error } = await supabase
+    .from('users')
+    .update({ username })
+    .eq('id', user.id)
+
+  if (error) {
+    const msg = error.code === '23505'
+      ? 'Username is already taken'
+      : 'Failed to update username: ' + error.message
+    redirect('/account?message=' + encodeURIComponent(msg))
+  }
+
+  redirect('/account?message=Username updated successfully')
+}
+
 export async function updatePassword(formData: FormData) {
   const password = formData.get('password') as string
   const confirmPassword = formData.get('confirmPassword') as string
