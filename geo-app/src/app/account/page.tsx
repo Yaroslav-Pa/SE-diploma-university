@@ -16,24 +16,24 @@ export default async function AccountSettingsPage({
 
   return (
     <div className="max-w-2xl flex flex-col gap-8">
-      <ToastNotification 
-        message={message} 
-        type={message?.toLowerCase().includes('success') ? 'success' : 'error'} 
+      <ToastNotification
+        message={message}
+        type={message?.toLowerCase().includes('success') ? 'success' : 'error'}
       />
       <div>
         <h1 className="text-2xl font-bold mb-1">Settings</h1>
         <p className="text-gray-500 dark:text-gray-400">Manage your account details and security.</p>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 p-6">
-        <h2 className="text-lg font-bold mb-4">Change Email</h2>
-        <form action={updateEmail} className="flex flex-col gap-3 max-w-sm">
-          <input type="email" name="email" defaultValue={user?.email} required className="w-full border rounded-md px-3 py-2 bg-transparent dark:border-slate-700 text-sm" />
-          <button type="submit" className="bg-blue-600 text-white font-bold py-2 rounded-md hover:bg-blue-700 transition-colors">
-            Update Email
-          </button>
-        </form>
-      </div>
+      {/*<div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 p-6">*/}
+      {/*  <h2 className="text-lg font-bold mb-4">Change Email</h2>*/}
+      {/*  <form action={updateEmail} className="flex flex-col gap-3 max-w-sm">*/}
+      {/*    <input type="email" name="email" defaultValue={user?.email} required className="w-full border rounded-md px-3 py-2 bg-transparent dark:border-slate-700 text-sm" />*/}
+      {/*    <button type="submit" className="bg-blue-600 text-white font-bold py-2 rounded-md hover:bg-blue-700 transition-colors">*/}
+      {/*      Update Email*/}
+      {/*    </button>*/}
+      {/*  </form>*/}
+      {/*</div>*/}
 
       <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 p-6">
         <h2 className="text-lg font-bold mb-4">Change Password</h2>

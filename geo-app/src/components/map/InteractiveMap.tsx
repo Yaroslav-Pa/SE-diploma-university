@@ -79,8 +79,14 @@ function MapEvents({
 
 function UpdateCenter({ center, zoom }: { center: [number, number], zoom: number }) {
   const map = useMap()
+
   useEffect(() => {
-    // Only flyTo if the map's current center is significantly different
+    const stopFly = () => { map.stop() }
+    map.on('dragstart', stopFly)
+    return () => { map.off('dragstart', stopFly) }
+  }, [map])
+
+  useEffect(() => {
     const currentCenter = map.getCenter()
     if (Math.abs(currentCenter.lat - center[0]) > 0.001 || Math.abs(currentCenter.lng - center[1]) > 0.001 || map.getZoom() !== zoom) {
       map.flyTo(center, zoom, { duration: 1.5 })
@@ -105,10 +111,6 @@ function PoiCreationModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [photos, setPhotos] = useState<File[]>([])
   const [coverIndex, setCoverIndex] = useState<number>(0)
-
-  const now = new Date()
-  const minDate = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16)
-  const maxDate = new Date(now.getFullYear() + 5, now.getMonth(), now.getDate()).toISOString().slice(0, 16)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -258,7 +260,7 @@ function PoiCreationModal({
           <div className="flex gap-2 px-3 pb-2.5">
             <input
               type="date"
-              min={minDate.slice(0, 10)}
+              max="9999-12-31"
               name="startDate_date"
               className="flex-1 min-w-0 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400 transition-all cursor-pointer"
             />
@@ -281,7 +283,7 @@ function PoiCreationModal({
           <div className="flex gap-2 px-3 pb-2.5">
             <input
               type="date"
-              min={minDate.slice(0, 10)}
+              max="9999-12-31"
               name="endDate_date"
               required
               className="flex-1 min-w-0 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-rose-400/40 focus:border-rose-400 transition-all cursor-pointer"
@@ -351,10 +353,8 @@ export default function InteractiveMap({ userId }: { userId?: string }) {
 
   const selectedPoiId = searchParams.get('poi')
 
-  // Handle POI selection from URL
   useEffect(() => {
     if (selectedPoiId) {
-      // Only center if we haven't centered on this specific ID yet
       if (selectedPoiId !== centeredPoiId) {
         const poi = pois.find(p => p.id === selectedPoiId)
         if (poi) {
@@ -434,7 +434,7 @@ export default function InteractiveMap({ userId }: { userId?: string }) {
         minLng = ((minLng + 180) % 360 + 360) % 360 - 180
         maxLng = ((maxLng + 180) % 360 + 360) % 360 - 180
 
-        // If normalization causes min > max (crossing antimeridian), 
+        // If normalization causes min > max (crossing antimeridian),
         // fallback to querying the whole world for this MVP
         if (minLng > maxLng) {
           minLng = -180
@@ -466,7 +466,7 @@ export default function InteractiveMap({ userId }: { userId?: string }) {
       <MapContainer
         center={userLocation}
         zoom={mapZoom}
-        minZoom={3}
+        minZoom={6}
         scrollWheelZoom={true}
         className="h-full w-full z-0"
       >
