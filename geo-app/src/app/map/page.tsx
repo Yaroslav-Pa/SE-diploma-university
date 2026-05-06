@@ -7,6 +7,13 @@ export default async function MapPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  let isAdmin = false
+  if (user) {
+    const { data } = await supabase
+      .from('users').select('is_admin').eq('id', user.id).single()
+    isAdmin = data?.is_admin ?? false
+  }
+
   return (
     <div className="relative h-screen w-full overflow-hidden flex flex-col">
       {/* Top Navigation Overlay */}
@@ -46,7 +53,7 @@ export default async function MapPage() {
       </div>
 
       {/* Map */}
-      <MapWrapper userId={user?.id} />
+      <MapWrapper userId={user?.id} isAdmin={isAdmin} />
     </div>
   )
 }

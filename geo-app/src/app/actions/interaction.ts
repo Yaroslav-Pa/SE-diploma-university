@@ -84,6 +84,22 @@ export async function toggleReaction(poiId: string, type: 'upvote' | 'downvote')
   revalidatePath('/map')
 }
 
+export async function deleteComment(commentId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { data: userData } = await supabase
+    .from('users').select('is_admin').eq('id', user.id).single()
+  const isAdmin = userData?.is_admin ?? false
+
+  const query = supabase.from('comments').delete().eq('id', commentId)
+  const { error } = isAdmin ? await query : await query.eq('user_id', user.id)
+  if (error) throw new Error('Failed to delete comment')
+
+  revalidatePath('/map')
+}
+
 export async function getPoiDetails(poiId: string) {
   const supabase = await createClient()
   const { data, error } = await supabase

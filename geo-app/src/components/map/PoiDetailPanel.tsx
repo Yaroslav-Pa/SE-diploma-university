@@ -1,21 +1,24 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getPoiDetails, getComments, toggleReaction, addComment } from '@/app/actions/interaction'
+import { getPoiDetails, getComments, toggleReaction, addComment, deleteComment } from '@/app/actions/interaction'
+import { deletePoi } from '@/app/actions/poi'
 import ImageCarousel from '@/components/ui/ImageCarousel'
 import imageCompression from 'browser-image-compression'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
-import { X, MessageSquare, ThumbsUp, ThumbsDown, User, Clock, MapPin, Plus } from 'lucide-react'
+import { X, MessageSquare, ThumbsUp, ThumbsDown, User, Clock, MapPin, Plus, Trash2 } from 'lucide-react'
 
 interface PoiDetailPanelProps {
   poiId: string
   userId?: string
+  isAdmin?: boolean
   onClose: () => void
   onPoiLoaded?: (lat: number, lng: number) => void
+  onPoiDeleted?: () => void
 }
 
-export default function PoiDetailPanel({ poiId, userId, onClose, onPoiLoaded }: PoiDetailPanelProps) {
+export default function PoiDetailPanel({ poiId, userId, isAdmin, onClose, onPoiLoaded, onPoiDeleted }: PoiDetailPanelProps) {
   const [poi, setPoi] = useState<any>(null)
   const [comments, setComments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -56,6 +59,28 @@ export default function PoiDetailPanel({ poiId, userId, onClose, onPoiLoaded }: 
       await toggleReaction(poiId, type)
       loadData()
     } catch { toast.error('Failed to vote') }
+  }
+
+  const handleDeleteComment = async (commentId: string) => {
+    setComments(prev => prev.filter(c => c.id !== commentId))
+    try {
+      await deleteComment(commentId)
+    } catch {
+      toast.error('Failed to delete comment')
+      const refreshed = await getComments(poiId)
+      setComments(refreshed || [])
+    }
+  }
+
+  const handleDeletePoi = async () => {
+    if (!window.confirm('Delete this POI? This cannot be undone.')) return
+    try {
+      await deletePoi(poiId)
+      toast.success('POI deleted')
+      onPoiDeleted?.()
+    } catch {
+      toast.error('Failed to delete POI')
+    }
   }
 
   const handleComment = async (e: React.FormEvent) => {
@@ -122,12 +147,23 @@ export default function PoiDetailPanel({ poiId, userId, onClose, onPoiLoaded }: 
               {poi && <span className="text-[9px] font-bold uppercase tracking-widest text-gray-400">{poi.category}</span>}
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-all text-gray-400 hover:text-gray-900 dark:hover:text-white"
-          >
-            <X size={20} />
-          </button>
+          <div className="flex items-center gap-1">
+            {poi && (isAdmin || userId === poi.creator_id) && (
+              <button
+                onClick={handleDeletePoi}
+                className="p-2 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-full transition-all text-gray-400 hover:text-red-500"
+                title="Delete POI"
+              >
+                <Trash2 size={18} />
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-all text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {loading ? (
@@ -288,9 +324,20 @@ export default function PoiDetailPanel({ poiId, userId, onClose, onPoiLoaded }: 
                         {comment.users?.username?.[0] || 'U'}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-baseline justify-between gap-2 mb-0.5">
+                        <div className="flex items-center justify-between gap-2 mb-0.5">
                           <span className="font-bold text-xs text-gray-900 dark:text-white truncate">{comment.users?.username || 'Unknown'}</span>
-                          <span className="text-[9px] text-gray-400 whitespace-nowrap">{new Date(comment.created_at).toLocaleDateString()}</span>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className="text-[9px] text-gray-400 whitespace-nowrap">{new Date(comment.created_at).toLocaleDateString()}</span>
+                            {(isAdmin || userId === comment.user_id) && (
+                              <button
+                                onClick={() => handleDeleteComment(comment.id)}
+                                className="p-0.5 text-gray-300 hover:text-red-500 dark:text-gray-600 dark:hover:text-red-400 transition-colors"
+                                title="Delete comment"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
                         </div>
                         <p className="text-[13px] text-gray-600 dark:text-gray-300 leading-tight mb-2">{comment.content}</p>
                         {comment.image_urls && comment.image_urls.length > 0 && (

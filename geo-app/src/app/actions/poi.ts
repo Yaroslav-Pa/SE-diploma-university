@@ -142,14 +142,14 @@ export async function deletePoi(id: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
-  const { error } = await supabase
-    .from('pois')
-    .delete()
-    .eq('id', id)
-    .eq('creator_id', user.id)
+  const { data: userData } = await supabase
+    .from('users').select('is_admin').eq('id', user.id).single()
+  const isAdmin = userData?.is_admin ?? false
 
+  const query = supabase.from('pois').delete().eq('id', id)
+  const { error } = isAdmin ? await query : await query.eq('creator_id', user.id)
   if (error) throw new Error('Failed to delete POI')
-  
+
   revalidatePath('/map')
   revalidatePath('/my-pois')
 }

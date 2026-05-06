@@ -25,7 +25,6 @@ export default async function AccountSettingsPage({
         <h1 className="text-2xl font-bold mb-1">Settings</h1>
         <p className="text-gray-500 dark:text-gray-400">
           Logged in as <span className="font-medium text-gray-700 dark:text-gray-300">@{profile?.username ?? user?.email}</span>
-          Email: {user?.email}
         </p>
         <p className="text-gray-500 dark:text-gray-400">
           Email: {user?.email}

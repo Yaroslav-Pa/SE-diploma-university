@@ -14,6 +14,6 @@ const InteractiveMap = dynamic(
   }
 )
 
-export default function MapWrapper({ userId }: { userId?: string }) {
-  return <InteractiveMap userId={userId} />
+export default function MapWrapper({ userId, isAdmin }: { userId?: string; isAdmin?: boolean }) {
+  return <InteractiveMap userId={userId} isAdmin={isAdmin} />
 }

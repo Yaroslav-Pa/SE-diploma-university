@@ -8,6 +8,7 @@ import { getPoisInBounds, Poi, createPoi } from '@/app/actions/poi'
 import toast from 'react-hot-toast'
 import { useRouter, useSearchParams } from 'next/navigation'
 import PoiDetailPanel from '@/components/map/PoiDetailPanel'
+import MapFilterBar from '@/components/map/MapFilterBar'
 
 // Custom category icons
 const getCategoryIcon = (category: string) => {
@@ -312,7 +313,7 @@ function PoiCreationModal({
   )
 }
 
-export default function InteractiveMap({ userId }: { userId?: string }) {
+export default function InteractiveMap({ userId, isAdmin }: { userId?: string; isAdmin?: boolean }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [pois, setPois] = useState<Poi[]>([])
@@ -355,6 +356,17 @@ export default function InteractiveMap({ userId }: { userId?: string }) {
   const [centeredPoiId, setCenteredPoiId] = useState<string | null>(null)
 
   const selectedPoiId = searchParams.get('poi')
+  const searchQuery = searchParams.get('q') ?? ''
+  const activeCats = searchParams.get('cat')?.split(',').filter(Boolean) ?? []
+
+  const filteredPois = pois.filter(poi => {
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase()
+      if (!poi.title.toLowerCase().includes(q) && !poi.description?.toLowerCase().includes(q)) return false
+    }
+    if (activeCats.length > 0 && !activeCats.includes(poi.category)) return false
+    return true
+  })
 
   useEffect(() => {
     if (selectedPoiId) {
@@ -490,7 +502,7 @@ export default function InteractiveMap({ userId }: { userId?: string }) {
         )}
 
         {/* Render existing POIs */}
-        {pois.map(poi => {
+        {filteredPois.map(poi => {
           let coords = [0, 0]
           try {
             const loc = typeof poi.location === 'string' ? JSON.parse(poi.location) : poi.location
@@ -538,6 +550,21 @@ export default function InteractiveMap({ userId }: { userId?: string }) {
           )
         })}
       </MapContainer>
+
+      {/* Filter Bar */}
+      <div className="absolute top-2 left-0 right-0 flex justify-center z-[1000] px-4 pointer-events-none">
+        <div className="pointer-events-auto w-full max-w-xl">
+          <MapFilterBar
+            pois={pois}
+            onLocationSelect={(lat, lng) => {
+              setUserLocation([lat, lng])
+              setMapZoom(14)
+            }}
+            filteredCount={filteredPois.length}
+            totalCount={pois.length}
+          />
+        </div>
+      </div>
 
       {/* Floating Action Buttons */}
       <div className="absolute bottom-8 right-4 z-[1000] flex flex-col items-end gap-3 pointer-events-none">
@@ -606,10 +633,15 @@ export default function InteractiveMap({ userId }: { userId?: string }) {
         <PoiDetailPanel
           poiId={selectedPoiId}
           userId={userId}
+          isAdmin={isAdmin}
           onClose={handleCloseDetail}
           onPoiLoaded={(lat, lng) => {
             setUserLocation([lat, lng])
             setMapZoom(15)
+          }}
+          onPoiDeleted={() => {
+            handleCloseDetail()
+            setTimeout(() => fetchPois(), 300)
           }}
         />
       )}
