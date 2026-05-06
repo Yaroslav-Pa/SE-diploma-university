@@ -10,7 +10,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import PoiDetailPanel from '@/components/map/PoiDetailPanel'
 import MapFilterBar from '@/components/map/MapFilterBar'
 
-// Custom category icons
 const getCategoryIcon = (category: string) => {
   let iconHtml = '📍';
   let bgColor = 'bg-blue-500';
@@ -43,24 +42,29 @@ function MapEvents({
   isCreating,
   setNewPoiLocation
 }: {
-  setBounds: (b: L.LatLngBounds) => void,
+  setBounds: React.Dispatch<React.SetStateAction<L.LatLngBounds | null>>,
   isCreating: boolean,
   setNewPoiLocation: (loc: [number, number] | null) => void
 }) {
   const map = useMap()
+  const mapRef = useRef(map)
+  const setBoundsRef = useRef(setBounds)
   const isCreatingRef = useRef(isCreating)
   const setNewPoiLocationRef = useRef(setNewPoiLocation)
 
+  useEffect(() => { mapRef.current = map }, [map])
+  useEffect(() => { setBoundsRef.current = setBounds }, [setBounds])
   useEffect(() => { isCreatingRef.current = isCreating }, [isCreating])
   useEffect(() => { setNewPoiLocationRef.current = setNewPoiLocation }, [setNewPoiLocation])
 
   useEffect(() => {
     const onMoveEnd = () => {
-      setBounds(map.getBounds())
+      const newBounds = mapRef.current.getBounds()
+      setBoundsRef.current(prev => (prev?.equals(newBounds) ? prev : newBounds))
       localStorage.setItem('mapPos', JSON.stringify({
-        lat: map.getCenter().lat,
-        lng: map.getCenter().lng,
-        zoom: map.getZoom()
+        lat: mapRef.current.getCenter().lat,
+        lng: mapRef.current.getCenter().lng,
+        zoom: mapRef.current.getZoom()
       }))
     }
     const onClick = (e: L.LeafletMouseEvent) => {
@@ -69,14 +73,17 @@ function MapEvents({
       }
     }
 
-    setBounds(map.getBounds())
-    map.on('moveend', onMoveEnd)
-    map.on('click', onClick)
+    setBoundsRef.current(prev => {
+      const b = mapRef.current.getBounds()
+      return prev?.equals(b) ? prev : b
+    })
+    mapRef.current.on('moveend', onMoveEnd)
+    mapRef.current.on('click', onClick)
     return () => {
-      map.off('moveend', onMoveEnd)
-      map.off('click', onClick)
+      mapRef.current.off('moveend', onMoveEnd)
+      mapRef.current.off('click', onClick)
     }
-  }, [map, setBounds])
+  }, [])
 
   return null
 }
