@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet'
+import { useEffect, useRef, useState, useCallback } from 'react'
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { getPoisInBounds, Poi, createPoi } from '@/app/actions/poi'
@@ -46,32 +46,35 @@ function MapEvents({
   isCreating: boolean,
   setNewPoiLocation: (loc: [number, number] | null) => void
 }) {
-  const map = useMapEvents({
-    moveend: () => {
-      setBounds(map.getBounds())
-      localStorage.setItem('mapPos', JSON.stringify({
-        lat: map.getCenter().lat,
-        lng: map.getCenter().lng,
-        zoom: map.getZoom()
-      }))
-    },
-    zoomend: () => {
-      setBounds(map.getBounds())
-      localStorage.setItem('mapPos', JSON.stringify({
-        lat: map.getCenter().lat,
-        lng: map.getCenter().lng,
-        zoom: map.getZoom()
-      }))
-    },
-    click: (e) => {
-      if (isCreating) {
-        setNewPoiLocation([e.latlng.lat, e.latlng.lng])
-      }
-    }
-  })
+  const map = useMap()
+  const isCreatingRef = useRef(isCreating)
+  const setNewPoiLocationRef = useRef(setNewPoiLocation)
+
+  useEffect(() => { isCreatingRef.current = isCreating }, [isCreating])
+  useEffect(() => { setNewPoiLocationRef.current = setNewPoiLocation }, [setNewPoiLocation])
 
   useEffect(() => {
+    const onMoveEnd = () => {
+      setBounds(map.getBounds())
+      localStorage.setItem('mapPos', JSON.stringify({
+        lat: map.getCenter().lat,
+        lng: map.getCenter().lng,
+        zoom: map.getZoom()
+      }))
+    }
+    const onClick = (e: L.LeafletMouseEvent) => {
+      if (isCreatingRef.current) {
+        setNewPoiLocationRef.current([e.latlng.lat, e.latlng.lng])
+      }
+    }
+
     setBounds(map.getBounds())
+    map.on('moveend', onMoveEnd)
+    map.on('click', onClick)
+    return () => {
+      map.off('moveend', onMoveEnd)
+      map.off('click', onClick)
+    }
   }, [map, setBounds])
 
   return null
