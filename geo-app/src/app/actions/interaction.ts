@@ -68,7 +68,6 @@ export async function toggleReaction(poiId: string, type: 'upvote' | 'downvote')
     throw new Error('Not authenticated')
   }
 
-  // Use the RPC function we defined in schema to atomically update the reaction
   const { error } = await supabase.rpc('toggle_reaction', {
     p_poi_id: poiId,
     p_type: type
@@ -76,7 +75,6 @@ export async function toggleReaction(poiId: string, type: 'upvote' | 'downvote')
 
   if (error) {
     console.error('Failed to toggle reaction', error)
-    // Fallback if RPC doesn't exist? Since we provided the schema, we assume it does.
     throw new Error('Failed to toggle reaction')
   }
 

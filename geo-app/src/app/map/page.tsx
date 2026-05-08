@@ -1,7 +1,6 @@
 import MapWrapper from '@/components/map/MapWrapper'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { logout } from '@/app/(auth)/actions'
 
 export default async function MapPage() {
   const supabase = await createClient()
@@ -16,8 +15,7 @@ export default async function MapPage() {
 
   return (
     <div className="relative h-screen w-full overflow-hidden flex flex-col">
-      {/* Top Navigation Overlay */}
-      <div className="absolute top-0 left-0 w-full p-4 z-[1000] pointer-events-none flex justify-between items-start">
+      <div className="absolute top-0 left-0 w-full p-4 z-1000 pointer-events-none flex justify-between items-start">
         <Link
           href="/"
           className="pointer-events-auto ml-12 bg-white/90 dark:bg-black/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-gray-200 dark:border-gray-800 font-semibold text-sm hover:-translate-y-0.5 transition-transform"
@@ -52,7 +50,6 @@ export default async function MapPage() {
         </div>
       </div>
 
-      {/* Map */}
       <MapWrapper userId={user?.id} isAdmin={isAdmin} />
     </div>
   )

@@ -37,7 +37,6 @@ export async function signup(formData: FormData) {
     redirect('/register?message=' + encodeURIComponent('Username is already taken'))
   }
 
-  // Note: Assuming email confirmations are disabled for development, or using a trigger.
   const { error, data } = await supabase.auth.signUp({
     email,
     password,
@@ -48,8 +47,6 @@ export async function signup(formData: FormData) {
   }
 
   if (data.user) {
-    // Attempt to create public profile. This assumes the user is logged in (email confirm disabled).
-    // If it fails due to RLS, it means they are not fully authenticated yet.
     const { error: profileError } = await supabase.from('users').insert({
       id: data.user.id,
       username: username,
@@ -57,7 +54,6 @@ export async function signup(formData: FormData) {
     
     if (profileError) {
       console.error('Profile creation failed:', profileError)
-      // We still redirect to let the user know account was created
     }
   }
 

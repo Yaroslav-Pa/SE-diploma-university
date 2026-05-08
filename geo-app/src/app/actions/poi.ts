@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import wkx from 'wkx'
 
-// Helper to parse PostGIS hex WKB to GeoJSON
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseLocation(loc: any) {
   if (typeof loc === 'string') {
     try {
@@ -24,6 +24,7 @@ export interface Poi {
   title: string
   description: string
   category: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   location: any // In JS, it returns GeoJSON { type: "Point", coordinates: [lng, lat] }
   start_date: string
   end_date: string
@@ -36,8 +37,6 @@ export interface Poi {
 export async function getPoisInBounds(minLat: number, minLng: number, maxLat: number, maxLng: number) {
   const supabase = await createClient()
 
-  // We assume an RPC `get_pois_in_bounds` exists in the database
-  // If not, we will fallback to fetching active POIs and filtering on the client for the MVP
   const { data, error } = await supabase.rpc('get_pois_in_bounds', {
     min_lat: minLat,
     min_lng: minLng,
@@ -47,7 +46,6 @@ export async function getPoisInBounds(minLat: number, minLng: number, maxLat: nu
 
   if (error) {
     console.error('Error fetching POIs from RPC, falling back to basic fetch:', error)
-    // Fallback if RPC is not installed: Fetch all active and filter in JS (Not optimal, but works for MVP)
     const { data: fallbackData, error: fallbackError } = await supabase
       .from('pois')
       .select('*')
@@ -57,13 +55,11 @@ export async function getPoisInBounds(minLat: number, minLng: number, maxLat: nu
       throw new Error('Failed to fetch POIs: ' + fallbackError.message)
     }
     
-    // Parse locations first
     const processedData = fallbackData.map((poi: Poi) => ({
       ...poi,
       location: parseLocation(poi.location)
     }))
 
-    // Functional filter
     return processedData.filter((poi: Poi) => {
       if (!poi.location || !poi.location.coordinates) return false;
       const [lng, lat] = poi.location.coordinates;
@@ -71,7 +67,6 @@ export async function getPoisInBounds(minLat: number, minLng: number, maxLat: nu
     }) as Poi[];
   }
 
-  // Parse locations for RPC data too
   return data.map((poi: Poi) => ({
     ...poi,
     location: parseLocation(poi.location)
@@ -81,7 +76,9 @@ export async function getPoisInBounds(minLat: number, minLng: number, maxLat: nu
 export async function createPoi(formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  if (!user) {
+    throw new Error('Not authenticated')
+  }
 
   const title = formData.get('title') as string
   const description = formData.get('description') as string
@@ -113,8 +110,6 @@ export async function createPoi(formData: FormData) {
   const point = new wkx.Point(lng, lat)
   point.srid = 4326
   const locationWkb = point.toWkb().toString('hex')
-
-  console.log('Creating POI with location:', `POINT(${lng} ${lat})`, 'WKB:', locationWkb)
 
   const { error } = await supabase.from('pois').insert({
     creator_id: user.id,

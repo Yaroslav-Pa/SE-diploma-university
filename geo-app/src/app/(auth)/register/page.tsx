@@ -72,7 +72,7 @@ export default function RegisterPage({
           placeholder="••••••••"
           required
         />
-        <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-4 py-2 text-foreground mb-2">
+        <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-4 py-2 mb-2">
           Sign Up
         </button>
         <div className="text-center text-sm text-gray-500 mt-4">

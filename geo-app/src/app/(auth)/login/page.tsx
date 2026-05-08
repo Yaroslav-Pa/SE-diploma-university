@@ -62,11 +62,11 @@ export default function LoginPage({
           placeholder="••••••••"
           required
         />
-        <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-4 py-2 text-foreground mb-2">
+        <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-4 py-2 mb-2">
           Sign In
         </button>
         <div className="text-center text-sm text-gray-500 mt-4">
-          Don't have an account?{' '}
+          Don&apos;t have an account?{' '}
           <Link href="/register" className="text-blue-600 hover:underline">
             Register here
           </Link>

@@ -57,7 +57,7 @@ export default async function MyPoisPage() {
         </div>
       ) : (
         <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 p-12 text-center">
-          <h3 className="text-xl font-medium text-gray-600 dark:text-gray-400 mb-4">You haven't created any POIs yet.</h3>
+          <h3 className="text-xl font-medium text-gray-600 dark:text-gray-400 mb-4">You haven&apos;t created any POIs yet.</h3>
           <Link
             href="/map"
             className="inline-block bg-emerald-500 text-white px-6 py-3 rounded-full shadow-lg font-semibold hover:bg-emerald-600 transition-colors"
