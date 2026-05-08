@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { getPoiDetails, getComments, toggleReaction, addComment, deleteComment } from '@/app/actions/interaction'
 import { deletePoi } from '@/app/actions/poi'
 import ImageCarousel from '@/components/ui/ImageCarousel'
@@ -19,14 +19,16 @@ interface PoiDetailPanelProps {
 }
 
 export default function PoiDetailPanel({ poiId, userId, isAdmin, onClose, onPoiLoaded, onPoiDeleted }: PoiDetailPanelProps) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [poi, setPoi] = useState<any>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [comments, setComments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [commentText, setCommentText] = useState('')
   const [photos, setPhotos] = useState<File[]>([])
   const [submitting, setSubmitting] = useState(false)
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [poiData, commentsData] = await Promise.all([
         getPoiDetails(poiId),
@@ -49,9 +51,10 @@ export default function PoiDetailPanel({ poiId, userId, isAdmin, onClose, onPoiL
     } finally {
       setLoading(false)
     }
-  }
+  },[onPoiLoaded, poiId])
 
-  useEffect(() => { loadData() }, [poiId])
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { loadData() }, [loadData, poiId])
 
   const handleReaction = async (type: 'upvote' | 'downvote') => {
     if (!userId) return toast.error('Sign in to vote')
@@ -129,7 +132,7 @@ export default function PoiDetailPanel({ poiId, userId, isAdmin, onClose, onPoiL
   }
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-auto p-4 sm:p-6 lg:p-8" onClick={onClose}>
+    <div className="fixed inset-0 z-9999 flex items-center justify-center pointer-events-auto p-4 sm:p-6 lg:p-8" onClick={onClose}>
       <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-md" />
 
       <div
@@ -205,7 +208,6 @@ export default function PoiDetailPanel({ poiId, userId, isAdmin, onClose, onPoiL
                       const now = new Date()
                       const start = poi.start_date ? new Date(poi.start_date) : null
                       const end = poi.end_date ? new Date(poi.end_date) : null
-                      // No start_date = already in progress
                       const hasStarted = !start || start <= now
                       const msLeft = end ? end.getTime() - now.getTime() : null
                       const isOver = msLeft !== null && msLeft <= 0
@@ -218,7 +220,7 @@ export default function PoiDetailPanel({ poiId, userId, isAdmin, onClose, onPoiL
                       if (isOver) { statusColor = 'bg-gray-400'; statusLabel = 'Ended'; statusPulse = false }
 
                       return (
-                        <div className="rounded-2xl overflow-hidden border border-gray-100 dark:border-slate-800 bg-gradient-to-br from-gray-50 to-white dark:from-slate-900/60 dark:to-slate-950/40">
+                        <div className="rounded-2xl overflow-hidden border border-gray-100 dark:border-slate-800 bg-linear-to-br from-gray-50 to-white dark:from-slate-900/60 dark:to-slate-950/40">
                           {/* Status bar */}
                           <div className={`flex items-center gap-2 px-4 py-2 ${isOver ? 'bg-gray-100 dark:bg-slate-800/60' : hasStarted ? 'bg-emerald-50 dark:bg-emerald-950/30' : 'bg-blue-50 dark:bg-blue-950/30'}`}>
                             <span className="flex items-center gap-1.5">
@@ -320,7 +322,7 @@ export default function PoiDetailPanel({ poiId, userId, isAdmin, onClose, onPoiL
                 <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar pb-4">
                   {comments.map(comment => (
                     <div key={comment.id} className="flex gap-3 bg-white dark:bg-slate-900 p-3 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white uppercase shrink-0 text-xs shadow-md">
+                      <div className="w-8 h-8 rounded-full bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white uppercase shrink-0 text-xs shadow-md">
                         {comment.users?.username?.[0] || 'U'}
                       </div>
                       <div className="flex-1 min-w-0">

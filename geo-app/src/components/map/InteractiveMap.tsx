@@ -108,7 +108,6 @@ function UpdateCenter({ center, zoom }: { center: [number, number], zoom: number
 
 import imageCompression from 'browser-image-compression'
 
-// ... existing code down to PoiCreationModal
 
 function PoiCreationModal({
   location,
@@ -129,7 +128,6 @@ function PoiCreationModal({
     const form = e.currentTarget
     const formData = new FormData(form)
 
-    // Combine split date + time fields into datetime strings
     const startDateVal = formData.get('startDate_date') as string
     const startTimeVal = (formData.get('startDate_time') as string)
     const endDateVal = formData.get('endDate_date') as string
@@ -148,7 +146,6 @@ function PoiCreationModal({
     const startDate = startDateVal ? `${startDateVal}T${startTimeVal}` : ''
     const endDate = endDateVal ? `${endDateVal}T${endTimeVal}` : ''
 
-    // Overwrite hidden fields
     formData.set('startDate', startDate)
     formData.set('endDate', endDate)
 
@@ -162,14 +159,12 @@ function PoiCreationModal({
       formData.append('lat', location[0].toString())
       formData.append('lng', location[1].toString())
 
-      // Reorder photos so cover is first
       const orderedPhotos = [...photos]
       if (orderedPhotos.length > 0 && coverIndex !== 0) {
         const cover = orderedPhotos.splice(coverIndex, 1)[0]
         orderedPhotos.unshift(cover)
       }
 
-      // Compress and append photos
       for (const file of orderedPhotos) {
         const compressedFile = await imageCompression(file, {
           maxSizeMB: 1,
@@ -278,7 +273,7 @@ function PoiCreationModal({
             <input
               type="time"
               name="startDate_time"
-              className="w-[120px] shrink-0 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400 transition-all cursor-pointer"
+              className="w-30 shrink-0 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400 transition-all cursor-pointer"
             />
           </div>
           <input type="hidden" name="startDate" id="startDateHidden" />
@@ -303,7 +298,7 @@ function PoiCreationModal({
               type="time"
               name="endDate_time"
               required
-              className="w-[120px] shrink-0 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-rose-400/40 focus:border-rose-400 transition-all cursor-pointer"
+              className="w-30 shrink-0 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-rose-400/40 focus:border-rose-400 transition-all cursor-pointer"
             />
           </div>
           <input type="hidden" name="endDate" id="endDateHidden" />
@@ -357,7 +352,6 @@ export default function InteractiveMap({ userId, isAdmin }: { userId?: string; i
     return true
   })
 
-  // Create mode state
   const [isCreating, setIsCreating] = useState(false)
   const [newPoiLocation, setNewPoiLocation] = useState<[number, number] | null>(null)
   const [centeredPoiId, setCenteredPoiId] = useState<string | null>(null)
@@ -385,6 +379,7 @@ export default function InteractiveMap({ userId, isAdmin }: { userId?: string; i
             const loc = typeof poi.location === 'string' ? JSON.parse(poi.location) : poi.location
             if (loc && loc.coordinates) {
               coords = loc.coordinates
+              // eslint-disable-next-line react-hooks/set-state-in-effect
               setUserLocation([coords[1], coords[0]])
               setMapZoom(15)
               setCenteredPoiId(selectedPoiId) // Mark as centered
@@ -419,6 +414,7 @@ export default function InteractiveMap({ userId, isAdmin }: { userId?: string; i
         }
       )
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoadingLoc(false)
     }
   }, [loadingLoc])
@@ -431,7 +427,6 @@ export default function InteractiveMap({ userId, isAdmin }: { userId?: string; i
           setMapZoom(15)
         },
         () => {
-          // Silently fail — location may not be available
           console.warn('Geolocation not available')
         }
       )
@@ -441,23 +436,18 @@ export default function InteractiveMap({ userId, isAdmin }: { userId?: string; i
   const fetchPois = useCallback(async () => {
     if (!bounds) return
     try {
-      // Calculate bounds properly handling antimeridian and zooming out
       let minLng = bounds.getWest()
       let maxLng = bounds.getEast()
       const minLat = Math.max(-90, bounds.getSouth())
       const maxLat = Math.min(90, bounds.getNorth())
 
       if (maxLng - minLng >= 360) {
-        // If zoomed out to see the whole world, query the whole world
         minLng = -180
         maxLng = 180
       } else {
-        // Normalize longitudes to -180..180
         minLng = ((minLng + 180) % 360 + 360) % 360 - 180
         maxLng = ((maxLng + 180) % 360 + 360) % 360 - 180
 
-        // If normalization causes min > max (crossing antimeridian),
-        // fallback to querying the whole world for this MVP
         if (minLng > maxLng) {
           minLng = -180
           maxLng = 180
@@ -472,6 +462,7 @@ export default function InteractiveMap({ userId, isAdmin }: { userId?: string; i
   }, [bounds])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchPois()
   }, [fetchPois])
 
@@ -525,7 +516,7 @@ export default function InteractiveMap({ userId, isAdmin }: { userId?: string; i
           return (
             <Marker key={poi.id} position={[lat, lng]} icon={getCategoryIcon(poi.category)}>
               <Popup>
-                <div className="flex flex-col gap-1 min-w-[200px]">
+                <div className="flex flex-col gap-1 min-w-50">
                   {poi.image_urls && poi.image_urls.length > 0 && (
                     <img src={poi.image_urls[0]} alt={poi.title} className="w-full h-24 object-cover rounded mb-1" />
                   )}
@@ -559,7 +550,7 @@ export default function InteractiveMap({ userId, isAdmin }: { userId?: string; i
       </MapContainer>
 
       {/* Filter Bar */}
-      <div className="absolute top-2 left-0 right-0 flex justify-center z-[1000] px-4 pointer-events-none">
+      <div className="absolute top-2 left-0 right-0 flex justify-center z-1000 px-4 pointer-events-none">
         <div className="pointer-events-auto w-full max-w-xl">
           <MapFilterBar
             pois={pois}
@@ -574,7 +565,7 @@ export default function InteractiveMap({ userId, isAdmin }: { userId?: string; i
       </div>
 
       {/* Floating Action Buttons */}
-      <div className="absolute bottom-8 right-4 z-[1000] flex flex-col items-end gap-3 pointer-events-none">
+      <div className="absolute bottom-8 right-4 z-1000 flex flex-col items-end gap-3 pointer-events-none">
         {userId && isCreating && !newPoiLocation && (
           <div className="bg-white dark:bg-slate-800 px-4 py-2 rounded-full shadow-lg text-sm font-bold text-emerald-600 dark:text-emerald-400 animate-bounce pointer-events-auto border-2 border-emerald-500">
             Click anywhere on the map to drop a pin!
